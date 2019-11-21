@@ -25,12 +25,13 @@ batch_norm_params_last = {
 
 
 def parametric_relu(x):
-    num_channels = x.shape[-1].value
+    num_channels = x.shape[1].value
     with tf.variable_scope('p_re_lu'):
         alpha = tf.get_variable('alpha', (1,1,num_channels),
                         initializer=tf.constant_initializer(0.0),
                         dtype=tf.float32)
-        return tf.nn.relu(x) + alpha * tf.minimum(0.0, x)
+        alpha = tf.transpose(alpha, [2, 0, 1])
+        return tf.nn.relu(x) - alpha * tf.nn.relu(-x)
 
 def se_module(input_net, ratio=16, reuse = None, scope = None):
     with tf.variable_scope(scope, 'SE', [input_net], reuse=reuse):
@@ -87,20 +88,21 @@ def inference(images, embedding_size=512, reuse=None, scope='SphereNet'):
                 model_version = '64' 
                 num_layers, num_kernels = model_params[model_version]
 
+                with slim.arg_scope([slim.conv2d], data_format='NCHW'):
+                    net = conv_module(images, num_layers[0], num_kernels[0], scope='conv1')
+                    print('module_1 shape:', [dim.value for dim in net.shape])
 
-                net = conv_module(images, num_layers[0], num_kernels[0], scope='conv1')
-                print('module_1 shape:', [dim.value for dim in net.shape])
+                    net = conv_module(net, num_layers[1], num_kernels[1], scope='conv2')
+                    print('module_2 shape:', [dim.value for dim in net.shape])
+                    
+                    net = conv_module(net, num_layers[2], num_kernels[2], scope='conv3')
+                    print('module_3 shape:', [dim.value for dim in net.shape])
 
-                net = conv_module(net, num_layers[1], num_kernels[1], scope='conv2')
-                print('module_2 shape:', [dim.value for dim in net.shape])
-                
-                net = conv_module(net, num_layers[2], num_kernels[2], scope='conv3')
-                print('module_3 shape:', [dim.value for dim in net.shape])
-
-                net = conv_module(net, num_layers[3], num_kernels[3], scope='conv4')
-                print('module_4 shape:', [dim.value for dim in net.shape])
+                    net = conv_module(net, num_layers[3], num_kernels[3], scope='conv4')
+                    print('module_4 shape:', [dim.value for dim in net.shape])
 
                 net_ = net
+                net = tf.transpose(net, [0, 2, 3, 1])
                 net = slim.flatten(net)
 
                 mu = slim.fully_connected(net, embedding_size, scope='Bottleneck',
@@ -109,7 +111,7 @@ def inference(images, embedding_size=512, reuse=None, scope='SphereNet'):
                                         activation_fn=None)
                 
                 # Output used for PFE
-                mu = tf.nn.l2_normalize(mu, axis=1)
+                # mu = tf.nn.l2_normalize(mu, axis=1)
                 conv_final = net
             
     return mu, conv_final

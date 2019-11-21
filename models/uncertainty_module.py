@@ -27,13 +27,15 @@ batch_norm_params_sigma = {
 def scale_and_shift(x, gamma_init=1.0, beta_init=0.0):
     num_channels = x.shape[-1].value
     with tf.variable_scope('scale_and_shift'):
-        gamma = tf.get_variable('alpha', (),
+        gamma = tf.get_variable('alpha', [],
                         initializer=tf.constant_initializer(gamma_init),
                         regularizer=slim.l2_regularizer(0.0),
                         dtype=tf.float32)
-        beta = tf.get_variable('gamma', (),
+        beta = tf.get_variable('gamma', [],
                         initializer=tf.constant_initializer(beta_init),
                         dtype=tf.float32)
+        gamma = tf.reshape(gamma, [1, 1])
+        beta = tf.reshape(beta, [1, 1])
         x = gamma * x +  beta
 
         return x   
@@ -49,7 +51,7 @@ def inference(inputs, embedding_size, phase_train,
                                 is_training=phase_train):
                 print('UncertaintyModule input shape:', [dim.value for dim in inputs.shape])
 
-                net = slim.flatten(inputs)
+                net = inputs
 
                 net = slim.fully_connected(net, embedding_size, scope='fc1',
                     normalizer_fn=slim.batch_norm, normalizer_params=batch_norm_params, 
@@ -64,6 +66,6 @@ def inference(inputs, embedding_size, phase_train,
                 log_sigma_sq = scale_and_shift(log_sigma_sq, 1e-4, -7.0)
 
                 # Add epsilon for sigma_sq for numerical stableness                
-                log_sigma_sq = tf.log(1e-6 + tf.exp(log_sigma_sq))
+                # log_sigma_sq = tf.log(1e-6 + tf.exp(log_sigma_sq))
 
     return log_sigma_sq
