@@ -56,7 +56,8 @@ def se_module(input_net, ratio=16, reuse = None, scope = None):
 def conv_module(net, num_res_layers, num_kernels, trans_kernel_size=3, trans_stride=2,
                      use_se=False, reuse=None, scope=None):
     with tf.variable_scope(scope, 'conv', [net], reuse=reuse):
-        net = slim.conv2d(net, num_kernels, kernel_size=trans_kernel_size, stride=trans_stride, padding='SAME',
+        net = tf.pad(net, [[0, 0], [0, 0], [0, 1], [0, 1]])
+        net = slim.conv2d(net, num_kernels, kernel_size=trans_kernel_size, stride=trans_stride, padding='VALID',
                 weights_initializer=slim.xavier_initializer()) 
         shortcut = net
         for i in range(num_res_layers):
