@@ -29,7 +29,7 @@ from __future__ import print_function
 from align.matlab_cp2tform import get_similarity_transform_for_cv2
 
 import numpy as np
-from scipy import misc
+import imageio
 import sys
 import os
 import argparse
@@ -80,7 +80,7 @@ def main(args):
         # Transform
         if args.prefix:
             img_path = os.path.join(args.prefix, img_path)
-        img = misc.imread(img_path)
+        img = imageio.imread(img_path)
         img_new, new_pts, tfm = align(img, src_pts, ref_pts, args.image_size, args.scale, args.transpose_input)
 
         # Visulize
@@ -99,7 +99,7 @@ def main(args):
             if not os.path.isdir(dir_path):
                 os.makedirs(dir_path)
             img_path_new = os.path.join(dir_path, file_name)
-            misc.imsave(img_path_new, img_new)
+            imageio.imsave(img_path_new, img_new)
             if i % 100==0:
                 print(img_path_new)
 
