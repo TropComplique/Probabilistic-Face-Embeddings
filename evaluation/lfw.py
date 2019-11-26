@@ -24,7 +24,6 @@
 
 import os
 import numpy as np
-import scipy.io as sio
 from evaluation import metrics
 from collections import namedtuple
 
